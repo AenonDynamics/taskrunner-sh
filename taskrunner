@@ -1,0 +1,57 @@
+#!/bin/sh
+
+tasklogger(){
+    # send data - hide output: fail on http status >=400
+    # set api key within header
+    curl \
+        --fail \
+        --silent \
+        --header "X-APIKEY: $API_KEY" \
+        --data-urlencode "title=$1" \
+        --data-urlencode "status=$2" \
+        --data-urlencode "content=$3" \
+        --request POST \
+        "$API_URL" \
+        > /dev/null
+}
+
+# task config available ?
+[ ! -f "/etc/taskrunner.conf" ] && { echo >&2 "configuration file </etc/taskrunner.conf> not found"; exit 1; }
+
+# load config
+. /etc/taskrunner.conf
+
+# extract task title
+TASKNAME=$1
+
+# extract command
+CMD=$2
+
+# command given ?
+[ -z "$CMD" ] && { echo >&2 "executable not set"; exit 1; }
+
+# taskname given ?
+[ -z "$TASKNAME" ] && { echo >&2 "taskname not set"; exit 1; }
+
+# command valid ?
+command -v $CMD >/dev/null 2>&1 || { echo >&2 "executable <$CMD> not found"; exit 1; }
+
+# remove first+second argument from list and extract args
+shift
+shift
+ARGS=$@
+
+# run command and capture output
+OUTPUT=$($CMD $ARGS 2>&1)
+
+# store status code
+STATUS=$?
+
+# log task
+tasklogger "$TASKNAME" "$STATUS" "$OUTPUT"
+
+# curl operation success?
+[ $? -ne 0 ] && { echo >&2 "tasklogging failed"; }
+
+# command success ?
+[ $STATUS -ne 0 ] && { echo >&2 "operation failed"; exit 1; }
