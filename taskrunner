@@ -1,20 +1,5 @@
 #!/bin/sh
 
-tasklogger(){
-    # send data - hide output: fail on http status >=400
-    # set api key within header
-    curl \
-        --fail \
-        --silent \
-        --header "X-APIKEY: $API_KEY" \
-        --data-urlencode "title=$1" \
-        --data-urlencode "status=$2" \
-        --data-urlencode "content=$3" \
-        --request POST \
-        "$API_URL" \
-        > /dev/null
-}
-
 # task config available ?
 [ ! -f "/etc/taskrunner.conf" ] && { echo >&2 "configuration file </etc/taskrunner.conf> not found"; exit 1; }
 
@@ -41,14 +26,33 @@ shift
 shift
 ARGS=$@
 
+# get command start time
+T_START=$(date +%s)
+
 # run command and capture output
 OUTPUT=$($CMD $ARGS 2>&1)
 
 # store status code
 STATUS=$?
 
-# log task
-tasklogger "$TASKNAME" "$STATUS" "$OUTPUT"
+# get command stop time
+T_STOP=$(date +%s)
+
+# send data - hide output: fail on http status >=400
+# set api key within header
+curl \
+    --fail \
+    --silent \
+    --show-error \
+    --header "X-APIKEY: $API_KEY" \
+    --data-urlencode "title=$TASKNAME" \
+    --data-urlencode "status=$STATUS" \
+    --data-urlencode "content=$OUTPUT" \
+    --data-urlencode "t0=$T_START" \
+    --data-urlencode "t1=$T_STOP" \
+    --request POST \
+    "$API_URL" \
+    > /dev/null
 
 # curl operation success?
 [ $? -ne 0 ] && { echo >&2 "tasklogging failed"; }
