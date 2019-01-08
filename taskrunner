@@ -1,5 +1,39 @@
 #!/bin/sh
 
+# ----------------------------------------------------------------------
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# --
+# Copyright 2018-2019 Andi Dittrich <https://aenon-dynamics.com>
+# ----------------------------------------------------------------------
+
+# taskrunner-sh https://github.com/AenonDynamics/taskrunner-sh
+VERSION="0.3.0"
+
+show_usage(){
+    cat << EOF
+Usage: taskrunner <name> <executable> [args...]
+     --help                  Displays this help
+     --version               Displays version
+EOF
+    exit 0
+}
+
+show_version(){
+    cat << EOF
+taskrunner-sh 
+ - Version: ${VERSION}
+ - License: MPL-2.0 http://mozilla.org/MPL/2.0/
+ - Repository: https://github.com/AenonDynamics/taskrunner-sh
+EOF
+    exit 0
+}
+
+# simple processing because of variadic arguments
+[ "$1" = "--help" ] && show_usage
+[ "$1" = "--version" ] && show_version
+
 # task config available ?
 [ ! -f "/etc/taskrunner.conf" ] && { echo >&2 "configuration file </etc/taskrunner.conf> not found"; exit 1; }
 
@@ -12,11 +46,11 @@ TASKNAME=$1
 # extract command
 CMD=$2
 
-# command given ?
-[ -z "$CMD" ] && { echo >&2 "executable not set"; exit 1; }
-
 # taskname given ?
 [ -z "$TASKNAME" ] && { echo >&2 "taskname not set"; exit 1; }
+
+# command given ?
+[ -z "$CMD" ] && { echo >&2 "executable not set"; exit 1; }
 
 # command valid ?
 command -v $CMD >/dev/null 2>&1 || { echo >&2 "executable <$CMD> not found"; exit 1; }

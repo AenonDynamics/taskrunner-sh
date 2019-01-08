@@ -1,0 +1,38 @@
+{
+    "name": "taskrunner-sh",
+    "version": "0.3.0",
+    "package-monster": "0.2.0",
+    "description": "captures the command output and send it via http post",
+    "license": "MPL-2.0",
+    "author": "Andi Dittrich <opensource@aenon-dynamics.com>",
+    "website": "https://github.com/AenonDynamics/taskrunner-sh",
+    "bugs": "https://github.com/AenonDynamics/taskrunner-sh/issues",
+    "multiversion": false,
+    "repository": "public",
+    "type": "script",
+
+    "debian": {
+
+        "section": "net",
+        "priority": "extra",
+
+        "dependencies": [
+            "curl"
+        ],
+
+        "etc": [
+            "taskrunner.conf"
+        ],
+
+        "bin": [
+            "taskrunner"
+        ],
+
+        "files": [
+        ],
+
+        "scripts": {
+        }
+    }
+
+}
