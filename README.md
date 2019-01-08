@@ -7,7 +7,7 @@ captures the command output and send it via `http post` to a custom REST endpoin
 
 ## Architecture ##
 
-
+TBD
 
 ## Usage ##
 
@@ -31,7 +31,7 @@ the output/logs of `rsnapshot` will be aggregated
 10 06 5 * 0 /bin/taskrunner "rsnapshot monthly" /sbin/rsnapshot -c /etc/rsnapshot.conf monthly
 ```
 
-## Configrations ##
+## Configuration ##
 
 Each host require its own api key set via `/etc/taskrunner.conf`. This file also contains the API endpoint url.
 
@@ -57,7 +57,9 @@ The following variables are send via POST request:
 
 ### Authentication ###
 
-The APIKEY (token/bearer authentication) is send via the http header field `X-APIKEY` as plaintext - **TLS/SSL transport encryption is strongly recommended**.
+The APIKEY (token/bearer authentication) is send via the http header field `X-APIKEY` as plaintext.
+
+**TLS/SSL transport encryption is strongly recommended**
 
 ## Contribution ##
 
