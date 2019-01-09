@@ -75,10 +75,13 @@ T_STOP=$(date +%s)
 # send data - hide output: fail on http status >=400
 # set api key within header
 # avoid curl "Argument list too long" issue - use stdin
+# use empty "Expect" header to avoid HTTP417 issues
 curl \
     --fail \
     --silent \
     --show-error \
+    --http1.1 \
+    --header "Expect: " \
     --header "X-APIKEY: $API_KEY" \
     --data-urlencode "title=$TASKNAME" \
     --data-urlencode "status=$STATUS" \
