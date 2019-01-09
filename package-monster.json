@@ -1,8 +1,8 @@
 {
-    "name": "taskrunner-sh",
+    "name": "taskrunner",
     "version": "0.3.0",
     "package-monster": "0.2.0",
-    "description": "captures the command output and send it via http post",
+    "description": "captures the command output and sends it via http post",
     "license": "MPL-2.0",
     "author": "Andi Dittrich <opensource@aenon-dynamics.com>",
     "website": "https://github.com/AenonDynamics/taskrunner-sh",

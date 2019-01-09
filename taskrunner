@@ -74,6 +74,7 @@ T_STOP=$(date +%s)
 
 # send data - hide output: fail on http status >=400
 # set api key within header
+# avoid curl "Argument list too long" issue - use stdin
 curl \
     --fail \
     --silent \
@@ -81,12 +82,14 @@ curl \
     --header "X-APIKEY: $API_KEY" \
     --data-urlencode "title=$TASKNAME" \
     --data-urlencode "status=$STATUS" \
-    --data-urlencode "content=$OUTPUT" \
     --data-urlencode "t0=$T_START" \
     --data-urlencode "t1=$T_STOP" \
+    --data-urlencode "content@-" \
     --request POST \
     "$API_URL" \
-    > /dev/null
+    > /dev/null <<CURL_DATA
+${OUTPUT}
+CURL_DATA
 
 # curl operation success?
 [ $? -ne 0 ] && { echo >&2 "tasklogging failed"; }
