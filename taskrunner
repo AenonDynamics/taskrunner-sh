@@ -67,7 +67,7 @@ T_START=$(date +%s)
 OUTPUT=$($CMD $ARGS 2>&1)
 
 # store status code
-STATUS=$?
+TASK_STATUS=$?
 
 # get command stop time
 T_STOP=$(date +%s)
@@ -84,7 +84,7 @@ curl \
     --header "Expect: " \
     --header "X-APIKEY: $API_KEY" \
     --data-urlencode "title=$TASKNAME" \
-    --data-urlencode "status=$STATUS" \
+    --data-urlencode "status=$TASK_STATUS" \
     --data-urlencode "t0=$T_START" \
     --data-urlencode "t1=$T_STOP" \
     --data-urlencode "content@-" \
@@ -94,8 +94,14 @@ curl \
 ${OUTPUT}
 CURL_DATA
 
+# store status code
+LOG_STATUS=$?
+
 # curl operation success?
-[ $? -ne 0 ] && { echo >&2 "tasklogging failed"; }
+[ $LOG_STATUS -ne 0 ] && { echo >&2 "tasklogging failed"; }
 
 # command success ?
-[ $STATUS -ne 0 ] && { echo >&2 "operation failed"; exit 1; }
+[ $TASK_STATUS -ne 0 ] && { echo >&2 "operation failed"; exit 1; }
+
+# default exit code
+exit 0

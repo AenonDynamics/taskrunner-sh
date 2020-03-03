@@ -1,6 +1,6 @@
 {
     "name": "taskrunner",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "package-monster": "0.2.0",
     "description": "captures the command output and sends it via http post",
     "license": "MPL-2.0",
