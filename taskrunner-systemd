@@ -13,7 +13,7 @@ VERSION="0.5.0"
 
 show_usage(){
     cat << EOF
-Usage: taskrunner <name> <executable> [args...]
+Usage: taskrunner-systemd <name> <unit>
      --help                  Displays this help
      --version               Displays version
 EOF
@@ -22,7 +22,7 @@ EOF
 
 show_version(){
     cat << EOF
-taskrunner-sh 
+taskrunner-systemd 
  - Version: ${VERSION}
  - License: MPL-2.0 http://mozilla.org/MPL/2.0/
  - Repository: https://github.com/AenonDynamics/taskrunner-sh
@@ -41,36 +41,32 @@ EOF
 . /etc/taskrunner.conf
 
 # extract task title
-TASKNAME=$1
+TASK_NAME=$1
 
-# extract command
-CMD=$2
+# extract unit name
+UNITNAME=$2
 
 # taskname given ?
-[ -z "$TASKNAME" ] && { echo >&2 "taskname not set"; exit 1; }
+[ -z "$TASK_NAME" ] && { echo >&2 "taskname not set"; exit 1; }
 
-# command given ?
-[ -z "$CMD" ] && { echo >&2 "executable not set"; exit 1; }
+# unitname given ?
+[ -z "$UNITNAME" ] && { echo >&2 "unit not set"; exit 1; }
 
-# command valid ?
-command -v $CMD >/dev/null 2>&1 || { echo >&2 "executable <$CMD> not found"; exit 1; }
+# get last service invocation
+INVOCATION_ID=$(systemctl show --value -p InvocationID $UNITNAME)
 
-# remove first+second argument from list and extract args
-shift
-shift
-ARGS=$@
+# invocationid set ?
+[ -z "$INVOCATION_ID" ] && { echo >&2 "InvocationID not available for $UNITNAME"; exit 1; }
 
-# get command start time
-T_START=$(date +%s)
+# get command start/stop time
+TASK_START=$(systemctl show --value -p ExecMainStartTimestamp $UNITNAME)
+TASK_STOP=$(systemctl show --value -p ExecMainExitTimestamp $UNITNAME)
 
-# run command and capture output
-OUTPUT=$($CMD $ARGS 2>&1)
+# get status code
+TASK_STATUS=$(systemctl show --value -p ExecMainStatus $UNITNAME)
 
-# store status code
-TASK_STATUS=$?
-
-# get command stop time
-T_STOP=$(date +%s)
+# get log of last invocation from journald
+TASK_OUTPUT=$(journalctl _SYSTEMD_INVOCATION_ID=$INVOCATION_ID)
 
 # send data - hide output: fail on http status >=400
 # set api key within header
@@ -83,15 +79,15 @@ curl \
     --http1.1 \
     --header "Expect: " \
     --header "X-APIKEY: $API_KEY" \
-    --data-urlencode "title=$TASKNAME" \
+    --data-urlencode "title=$TASK_NAME" \
     --data-urlencode "status=$TASK_STATUS" \
-    --data-urlencode "t0=$T_START" \
-    --data-urlencode "t1=$T_STOP" \
+    --data-urlencode "t0=$TASK_START" \
+    --data-urlencode "t1=$TASK_STOP" \
     --data-urlencode "content@-" \
     --request POST \
     "$API_URL" \
     > /dev/null <<CURL_DATA
-${OUTPUT}
+${TASK_OUTPUT}
 CURL_DATA
 
 # store status code
@@ -100,8 +96,5 @@ LOG_STATUS=$?
 # curl operation success?
 [ $LOG_STATUS -ne 0 ] && { echo >&2 "tasklogging failed"; }
 
-# command success ?
-[ $TASK_STATUS -ne 0 ] && { echo >&2 "operation failed"; exit 1; }
-
 # default exit code
-exit 0
+exit $LOG_STATUS

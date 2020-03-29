@@ -3,20 +3,45 @@ taskrunner-sh
 
 **Centralized logging of cron and backup tasks without the need of host-based smtp transport/sendmail**
 
-captures the command output and send it via `http post` to a custom REST endpoint to aggregate data (e.g. cron, backups)
+## Features ##
 
-## Architecture ##
-
-TBD
+* captures the command output and send it via `http post` to a custom REST endpoint to aggregate data (e.g. cron, backups)
+* extract + send logs from last run of a systemd service via journalctl `InvocationID`
 
 ## Usage ##
+
+### Command wrapper ###
 
 ```bash
 # print "1234" to stdout via "echo" - identified as "my-task-name"
 taskrunner "my-task-name" echo "1234"
 ```
 
-## Cron Examples ##
+### systemd service status ###
+
+```bash
+# extract logs from last run of myservice - identified as "my-task-name"
+taskrunner-systemd "my-task-name" myservice.service
+```
+
+**Invocation via service file**
+
+Triggered after `restic-scheduler` has been executed
+
+```conf
+[Unit]
+Description=restic logger
+After=restic-scheduler@%i.service
+
+[Service]
+Type=simple
+ExecStart=taskrunner-systemd "restic backup of %i" restic-scheduler@%i.service
+
+[Install]
+WantedBy=restic-scheduler@%i.service
+```
+
+### Legacy cron examples ###
 
 the output/logs of `rsnapshot` will be aggregated
 
@@ -52,8 +77,8 @@ The following variables are send via POST request:
 * `title` - the task-name passed as first argument
 * `status` - the return/exit code of the command passed as second argument
 * `content` - stdout/stderr of the executed command
-* `t0` - execution start time of the process - unix timestamp
-* `t1` - execution stop time of the process - unix timestamp
+* `t0` - execution start time of the process - unix timestamp/ISO_8601/systemd-timestamp
+* `t1` - execution stop time of the process - unix timestamp/ISO_8601/systemd-timestamp
 
 ### Authentication ###
 
