@@ -1,5 +1,9 @@
 ## PRELIMINARY ##
 
+### 0.6.0 ###
+
+* Changed: removed hostname from journalctl output
+
 ### 0.5.0 ###
 
 * Added: `taskrunner-systemd` to transmit journald output after unit has been executed
