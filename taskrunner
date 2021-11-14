@@ -1,15 +1,17 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # ----------------------------------------------------------------------
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 # --
-# Copyright 2018-2020 Andi Dittrich <https://aenon-dynamics.com>
+# Copyright 2018-2021 Andi Dittrich <https://aenon-dynamics.com>
 # ----------------------------------------------------------------------
 
+set -o pipefail
+
 # taskrunner-sh https://github.com/AenonDynamics/taskrunner-sh
-VERSION="0.5.0"
+VERSION="1.0.0"
 
 show_usage(){
     cat << EOF
@@ -41,30 +43,34 @@ EOF
 . /etc/taskrunner.conf
 
 # extract task title
-TASKNAME=$1
+TASKNAME=${1}
 
 # extract command
-CMD=$2
+CMD=${2}
 
 # taskname given ?
-[ -z "$TASKNAME" ] && { echo >&2 "taskname not set"; exit 1; }
+[ -z "${TASKNAME}" ] && { echo >&2 "taskname not set"; exit 1; }
 
 # command given ?
-[ -z "$CMD" ] && { echo >&2 "executable not set"; exit 1; }
+[ -z "${CMD}" ] && { echo >&2 "executable not set"; exit 1; }
 
 # command valid ?
-command -v $CMD >/dev/null 2>&1 || { echo >&2 "executable <$CMD> not found"; exit 1; }
+command -v ${CMD} >/dev/null 2>&1 || { echo >&2 "executable <${CMD}> not found"; exit 1; }
 
 # remove first+second argument from list and extract args
 shift
 shift
 ARGS=$@
 
+# create logfile
+LOGFILE=$(mktemp)
+trap "rm ${LOGFILE}" EXIT
+
 # get command start time
 T_START=$(date +%s)
 
 # run command and capture output
-OUTPUT=$($CMD $ARGS 2>&1)
+${CMD} ${ARGS} 2>&1 | tee ${LOGFILE}
 
 # store status code
 TASK_STATUS=$?
@@ -82,26 +88,24 @@ curl \
     --show-error \
     --http1.1 \
     --header "Expect: " \
-    --header "X-APIKEY: $API_KEY" \
-    --data-urlencode "title=$TASKNAME" \
-    --data-urlencode "status=$TASK_STATUS" \
-    --data-urlencode "t0=$T_START" \
-    --data-urlencode "t1=$T_STOP" \
+    --header "X-APIKEY: ${API_KEY}" \
+    --data-urlencode "title=${TASKNAME}" \
+    --data-urlencode "status=${TASK_STATUS}" \
+    --data-urlencode "t0=${T_START}" \
+    --data-urlencode "t1=${T_STOP}" \
     --data-urlencode "content@-" \
     --request POST \
-    "$API_URL" \
-    > /dev/null <<CURL_DATA
-${OUTPUT}
-CURL_DATA
+    "${API_URL}" \
+    > /dev/null < ${LOGFILE}
 
 # store status code
 LOG_STATUS=$?
 
 # curl operation success?
-[ $LOG_STATUS -ne 0 ] && { echo >&2 "tasklogging failed"; }
+[ ${LOG_STATUS} -ne 0 ] && { echo >&2 "tasklogging failed"; }
 
 # command success ?
-[ $TASK_STATUS -ne 0 ] && { echo >&2 "operation failed"; exit 1; }
+[ ${TASK_STATUS} -ne 0 ] && { echo >&2 "operation failed"; exit 1; }
 
 # default exit code
 exit 0
